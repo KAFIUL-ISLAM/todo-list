@@ -1,22 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from 'react-query';
 import { toast } from 'react-toastify';
+import Spinner from './Spinner';
 
 const Homepage = () => {
 
     const [addTask, setAddTask] = useState(false);
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [completed, setCompleted] = useState(false);
-
-    useEffect(() => {
-        setLoading(true);
+    const { data: tasks, loading, refetch } = useQuery('tasks', () =>
         fetch("https://simple-todo-server-database.herokuapp.com/tasks")
             .then(res => res.json())
-            .then(data => {
-                setTasks(data);
-                setLoading(false);
-            });
-    }, [setTasks]);
+    )
 
     const handleSubmit = e => {
         e.preventDefault();
@@ -24,7 +17,6 @@ const Homepage = () => {
         const description = e.target.description.value;
         const newTask = { taskName, description };
         const url = 'https://simple-todo-server-database.herokuapp.com/tasks';
-        setTasks([...tasks, newTask]);
         fetch(url, {
             method: 'POST',
             headers: {
@@ -38,12 +30,12 @@ const Homepage = () => {
             })
         e.target.reset();
         setAddTask(false);
+        refetch();
     }
 
     const taskComplete = id => {
 
         const state = { taskState: true };
-        setCompleted(true);
         const url = `https://simple-todo-server-database.herokuapp.com/tasks/${id}`;
         fetch(url, {
             method: 'PUT',
@@ -54,14 +46,12 @@ const Homepage = () => {
         })
             .then(res => res.json)
             .then(data => {
-                toast.success("Task completed")
+                toast.success("Task completed");
+                refetch();
             })
     }
 
     const handleDelete = id => {
-
-        const remainTasks = tasks.filter(item => item._id !== id);
-        setTasks(remainTasks);
 
         const url = `https://simple-todo-server-database.herokuapp.com/tasks/${id}`;
         fetch(url, {
@@ -69,7 +59,8 @@ const Homepage = () => {
         })
             .then(res => res.json())
             .then(data => {
-                toast("Task Deleted")
+                toast("Task Deleted");
+                refetch();
             })
     }
 
@@ -91,9 +82,12 @@ const Homepage = () => {
             </div>
             <div className='mt-12 space-y-4'>
                 {
-                    tasks.map(task => <div key={task._id} className='border w-1/2 mx-auto rounded-lg flex items-center justify-between p-6' >
+                    loading ?
+                        <Spinner></Spinner>
+                        :
+                    tasks?.map(task => <div key={task._id} className='border w-1/2 mx-auto rounded-lg flex items-center justify-between p-6' >
                         <div className='flex items-center'>
-                            <button className='bg-green-600 px-2 py-1 text-white rounded' disabled={task.state} onClick={() => taskComplete(task._id)}><small>Complete</small></button>
+                            <button className={`${task.state ? 'bg-red-600' :'bg-green-600'} px-2 py-1 text-white rounded`} disabled={task.state} onClick={() => taskComplete(task._id)}><small>Completed</small></button>
                             <div className={`ml-4 ${task.state ? 'line-through' : ''}`}>
                                 <label className='text-xl font-semibold'>{task.taskName}</label>
                                 <p>{task.description}</p>
