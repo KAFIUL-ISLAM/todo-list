@@ -10,7 +10,7 @@ import RequiredAuth from './Components/RequiredAuth';
 
 function App() {
   return (
-    <div >
+    <div className='bg-[#E5D68A]'>
       <ToastContainer></ToastContainer>
       <Routes>
         <Route path='/' element={<RequiredAuth>
